@@ -117,15 +117,38 @@
       color: #9a9a9a;
     }
 
+    .message-list {
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.36s ease, transform 0.36s ease;
+    }
+
+    .message-list.is-clearing {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
     .message {
       display: flex;
       align-items: flex-start;
       gap: 10px;
       width: 100%;
+      animation: message-in 0.34s cubic-bezier(0.22, 0.8, 0.28, 1) both;
     }
 
     .message + .message {
       margin-top: 20px;
+    }
+
+    @keyframes message-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     .message.sent {
@@ -203,6 +226,46 @@
       background: var(--wechat-green);
     }
 
+    /* 对方正在输入 */
+    .typing .bubble {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 58px;
+      min-height: 38px;
+      padding: 0 15px;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #b5b5b5;
+      animation: typing-dot 1.15s ease-in-out infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.14s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.28s;
+    }
+
+    @keyframes typing-dot {
+      0%,
+      60%,
+      100% {
+        opacity: 0.35;
+        transform: translateY(0);
+      }
+      30% {
+        opacity: 1;
+        transform: translateY(-4px);
+      }
+    }
+
     /* 底部输入栏 */
     .composer {
       flex: 0 0 58px;
@@ -261,6 +324,17 @@
       opacity: 0.55;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .message,
+      .typing-dot {
+        animation: none;
+      }
+
+      .message-list {
+        transition: none;
+      }
+    }
+
     @media (max-width: 375px) {
       .phone {
         width: 100vw;
@@ -288,19 +362,8 @@
     </header>
 
     <section class="chat" aria-label="聊天记录" role="log">
-      <p class="timestamp">14:32</p>
-
-      <!-- 对方消息 -->
-      <div class="message received">
-        <div class="avatar assistant" aria-hidden="true">码</div>
-        <div class="bubble">在吗？</div>
-      </div>
-
-      <!-- 我的消息 -->
-      <div class="message sent">
-        <div class="avatar me" aria-hidden="true">我</div>
-        <div class="bubble">在的，怎么啦？</div>
-      </div>
+      <p class="timestamp" id="timestamp">14:32</p>
+      <div class="message-list" id="message-list" aria-live="polite" aria-relevant="additions"></div>
     </section>
 
     <footer class="composer">
@@ -330,5 +393,129 @@
       </button>
     </footer>
   </main>
+
+  <script>
+    (() => {
+      const chat = document.querySelector(".chat");
+      const messageList = document.querySelector("#message-list");
+      const timestamp = document.querySelector("#timestamp");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+      // 对话脚本：them = 对方（左侧白气泡），me = 我（右侧绿气泡）
+      const conversation = [
+        { sender: "them", text: "在吗？" },
+        { sender: "me", text: "在的，怎么啦？" },
+        { sender: "them", text: "我想用 AI 做一个无限动画，听说可以用 git 边做边回退？" },
+        { sender: "me", text: "对思路很简单" },
+        { sender: "me", text: "满意就 commit，不满意就 checkout / reset 回退再改" },
+        { sender: "them", text: "懂了那我先去试试" },
+        { sender: "me", text: "👍 有不懂的随时问。" }
+      ];
+
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      function scrollToBottom(behavior = "smooth") {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            chat.scrollTo({
+              top: chat.scrollHeight,
+              behavior: reduceMotion.matches ? "auto" : behavior
+            });
+          });
+        });
+      }
+
+      function createAvatar(sender) {
+        const avatar = document.createElement("div");
+        avatar.className = `avatar ${sender === "them" ? "assistant" : "me"}`;
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = sender === "them" ? "码" : "我";
+        return avatar;
+      }
+
+      function addMessage({ sender, text }) {
+        const row = document.createElement("div");
+        row.className = `message ${sender === "them" ? "received" : "sent"}`;
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = text;
+
+        row.append(createAvatar(sender), bubble);
+        messageList.append(row);
+        scrollToBottom();
+      }
+
+      function showTyping() {
+        const row = document.createElement("div");
+        row.className = "message received typing";
+        row.setAttribute("role", "status");
+        row.setAttribute("aria-label", "对方正在输入");
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.title = "正在输入";
+
+        for (let index = 0; index < 3; index += 1) {
+          const dot = document.createElement("span");
+          dot.className = "typing-dot";
+          dot.setAttribute("aria-hidden", "true");
+          bubble.append(dot);
+        }
+
+        row.append(createAvatar("them"), bubble);
+        messageList.append(row);
+        scrollToBottom();
+        return row;
+      }
+
+      function updateTimestamp() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        timestamp.textContent = `${hours}:${minutes}`;
+      }
+
+      async function playConversation() {
+        messageList.classList.remove("is-clearing");
+        messageList.replaceChildren();
+        chat.scrollTop = 0;
+        updateTimestamp();
+        await sleep(500);
+
+        for (const entry of conversation) {
+          if (entry.sender === "them") {
+            const typing = showTyping();
+            const typingTime = Math.min(1700, 650 + entry.text.length * 40);
+            await sleep(typingTime);
+            typing.remove();
+            scrollToBottom();
+          } else {
+            await sleep(420);
+          }
+
+          addMessage(entry);
+          await sleep(entry.sender === "them" ? 620 : 470);
+        }
+
+        // 最后一句停留片刻，淡出后重新开始
+        await sleep(2500);
+        messageList.classList.add("is-clearing");
+        await sleep(380);
+      }
+
+      async function start() {
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready.catch(() => {});
+        }
+
+        while (true) {
+          await playConversation();
+        }
+      }
+
+      start();
+    })();
+  </script>
 </body>
 </html>
