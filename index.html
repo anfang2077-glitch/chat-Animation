@@ -6,7 +6,8 @@
   <title>码道小助手</title>
   <style>
     :root {
-      --wechat-green: #95ec69;
+      --wechat-green: #9ceb77;
+      --typing-green: #46a832;
       --chat-bg: #ededed;
       --line: rgba(0, 0, 0, 0.08);
     }
@@ -110,11 +111,16 @@
     }
 
     .timestamp {
-      margin: 0 0 22px;
+      width: fit-content;
+      margin: 0 auto 22px;
+      padding: 5px 10px 6px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.055);
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1;
-      color: #9a9a9a;
+      letter-spacing: 0.2px;
+      color: #8d8d8d;
     }
 
     .message-list {
@@ -191,78 +197,101 @@
       overflow-wrap: break-word;
     }
 
-    /* 气泡小尾巴 */
+    /* 气泡小尾巴：尖端朝向头像 */
     .bubble::before {
       content: "";
       position: absolute;
-      top: 14px;
-      width: 9px;
-      height: 9px;
-      border-radius: 2px;
-      transform: rotate(45deg);
+      top: 13px;
+      width: 7px;
+      height: 13px;
     }
 
     /* 对方：左侧白气泡 */
     .received .bubble {
       color: #191919;
       background: #ffffff;
-      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
+      box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.055),
+        0 8px 18px rgba(0, 0, 0, 0.035);
     }
 
     .received .bubble::before {
-      left: -3px;
+      left: -6px;
       background: #ffffff;
+      clip-path: polygon(100% 0, 10% 50%, 100% 100%);
+      filter: drop-shadow(-1px 1px 1px rgba(0, 0, 0, 0.045));
     }
 
     /* 我：右侧绿气泡 */
     .sent .bubble {
-      color: #111111;
+      color: #15220e;
       background: var(--wechat-green);
-      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
+      box-shadow:
+        0 3px 10px rgba(85, 150, 45, 0.13),
+        0 1px 2px rgba(40, 80, 20, 0.05);
     }
 
     .sent .bubble::before {
-      right: -3px;
+      right: -6px;
       background: var(--wechat-green);
+      clip-path: polygon(0 0, 90% 50%, 0 100%);
+      filter: drop-shadow(1px 1px 1px rgba(70, 120, 40, 0.08));
     }
 
     /* 对方正在输入 */
     .typing .bubble {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 5px;
-      min-width: 58px;
+      gap: 3px;
       min-height: 38px;
-      padding: 0 15px;
+      padding: 9px 13px;
     }
 
-    .typing-dot {
-      width: 6px;
-      height: 6px;
+    .typing-label {
+      color: var(--typing-green);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.1px;
+      white-space: nowrap;
+    }
+
+    .typing-ellipsis {
+      color: var(--typing-green);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: 2px;
+      padding-top: 2px;
+    }
+
+    .typing-ellipsis span {
+      width: 3px;
+      height: 3px;
       border-radius: 50%;
-      background: #b5b5b5;
-      animation: typing-dot 1.15s ease-in-out infinite;
+      background: currentColor;
+      opacity: 0.3;
+      animation: typing-ellipsis 1.2s ease-in-out infinite;
     }
 
-    .typing-dot:nth-child(2) {
-      animation-delay: 0.14s;
+    .typing-ellipsis span:nth-child(2) {
+      animation-delay: 0.15s;
     }
 
-    .typing-dot:nth-child(3) {
-      animation-delay: 0.28s;
+    .typing-ellipsis span:nth-child(3) {
+      animation-delay: 0.3s;
     }
 
-    @keyframes typing-dot {
+    @keyframes typing-ellipsis {
       0%,
       60%,
       100% {
-        opacity: 0.35;
+        opacity: 0.3;
         transform: translateY(0);
       }
       30% {
         opacity: 1;
-        transform: translateY(-4px);
+        transform: translateY(-2px);
       }
     }
 
@@ -326,7 +355,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       .message,
-      .typing-dot {
+      .typing-ellipsis span {
         animation: none;
       }
 
@@ -454,15 +483,20 @@
 
         const bubble = document.createElement("div");
         bubble.className = "bubble";
-        bubble.title = "正在输入";
+
+        const label = document.createElement("span");
+        label.className = "typing-label";
+        label.textContent = "对方正在输入";
+
+        const ellipsis = document.createElement("span");
+        ellipsis.className = "typing-ellipsis";
+        ellipsis.setAttribute("aria-hidden", "true");
 
         for (let index = 0; index < 3; index += 1) {
-          const dot = document.createElement("span");
-          dot.className = "typing-dot";
-          dot.setAttribute("aria-hidden", "true");
-          bubble.append(dot);
+          ellipsis.append(document.createElement("span"));
         }
 
+        bubble.append(label, ellipsis);
         row.append(createAvatar("them"), bubble);
         messageList.append(row);
         scrollToBottom();
