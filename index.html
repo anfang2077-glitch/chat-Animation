@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>码道小助手</title>
+  <style>
+    :root {
+      --wechat-green: #95ec69;
+      --chat-bg: #ededed;
+      --line: rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background: #d6d6d6;
+      color: #191919;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* 375 × 720 手机画布 */
+    .phone {
+      width: 375px;
+      height: 720px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--chat-bg);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      position: relative;
+      z-index: 2;
+      flex: 0 0 55px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: #ededed;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .title {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .icon-button:active {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .icon-button svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* 聊天区 */
+    .chat {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 20px 14px 24px;
+      background: var(--chat-bg);
+      scrollbar-width: none;
+    }
+
+    .chat::-webkit-scrollbar {
+      display: none;
+    }
+
+    .timestamp {
+      margin: 0 0 22px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1;
+      color: #9a9a9a;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .message + .message {
+      margin-top: 20px;
+    }
+
+    .message.sent {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      flex: 0 0 38px;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .avatar.assistant {
+      color: #5b3b00;
+      background: linear-gradient(145deg, #ffd66b, #f3b93f);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+    }
+
+    .avatar.me {
+      color: #ffffff;
+      background: linear-gradient(145deg, #5b9dff, #3075e8);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    }
+
+    .bubble {
+      position: relative;
+      max-width: 72%;
+      padding: 10px 13px;
+      border-radius: 8px;
+      font-size: 15px;
+      line-height: 1.55;
+      letter-spacing: 0.1px;
+      overflow-wrap: break-word;
+    }
+
+    /* 气泡小尾巴 */
+    .bubble::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      transform: rotate(45deg);
+    }
+
+    /* 对方：左侧白气泡 */
+    .received .bubble {
+      color: #191919;
+      background: #ffffff;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
+    }
+
+    .received .bubble::before {
+      left: -3px;
+      background: #ffffff;
+    }
+
+    /* 我：右侧绿气泡 */
+    .sent .bubble {
+      color: #111111;
+      background: var(--wechat-green);
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
+    }
+
+    .sent .bubble::before {
+      right: -3px;
+      background: var(--wechat-green);
+    }
+
+    /* 底部输入栏 */
+    .composer {
+      flex: 0 0 58px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      background: #f7f7f7;
+      border-top: 1px solid var(--line);
+    }
+
+    .composer .tool {
+      flex: 0 0 28px;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      color: #333333;
+      cursor: pointer;
+    }
+
+    .composer .tool svg {
+      width: 25px;
+      height: 25px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .composer .message-input {
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
+      height: 36px;
+      padding: 0 11px;
+      border: 0;
+      border-radius: 6px;
+      outline: none;
+      background: #ffffff;
+      color: #191919;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .composer .message-input::placeholder {
+      color: #b2b2b2;
+    }
+
+    .composer .tool:active {
+      opacity: 0.55;
+    }
+
+    @media (max-width: 375px) {
+      .phone {
+        width: 100vw;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="码道小助手聊天界面">
+    <header class="title-bar">
+      <button class="icon-button" type="button" aria-label="返回">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15.2 4.8 8 12l7.2 7.2"></path>
+        </svg>
+      </button>
+      <h1 class="title">码道小助手</h1>
+      <button class="icon-button" type="button" aria-label="更多">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"></circle>
+          <circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"></circle>
+          <circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"></circle>
+        </svg>
+      </button>
+    </header>
+
+    <section class="chat" aria-label="聊天记录" role="log">
+      <p class="timestamp">14:32</p>
+
+      <!-- 对方消息 -->
+      <div class="message received">
+        <div class="avatar assistant" aria-hidden="true">码</div>
+        <div class="bubble">在吗？</div>
+      </div>
+
+      <!-- 我的消息 -->
+      <div class="message sent">
+        <div class="avatar me" aria-hidden="true">我</div>
+        <div class="bubble">在的，怎么啦？</div>
+      </div>
+    </section>
+
+    <footer class="composer">
+      <button class="tool" type="button" aria-label="语音">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+          <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"></path>
+        </svg>
+      </button>
+
+      <input class="message-input" type="text" placeholder="发送消息…" aria-label="消息输入框">
+
+      <button class="tool" type="button" aria-label="表情">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <circle cx="9" cy="10" r="0.9" fill="currentColor" stroke="none"></circle>
+          <circle cx="15" cy="10" r="0.9" fill="currentColor" stroke="none"></circle>
+          <path d="M8.7 14.2c.8 1.2 1.9 1.9 3.3 1.9s2.5-.7 3.3-1.9"></path>
+        </svg>
+      </button>
+
+      <button class="tool" type="button" aria-label="更多功能">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <path d="M12 8.2v7.6M8.2 12h7.6"></path>
+        </svg>
+      </button>
+    </footer>
+  </main>
+</body>
+</html>
