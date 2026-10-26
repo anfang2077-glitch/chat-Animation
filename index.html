@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0c1a">
   <title>码道小助手</title>
   <style>
     :root {
-      --wechat-green: #9ceb77;
+      --neon-pink: #ff2d9b;
+      --neon-violet: #7b3cff;
+      --neon-blue: #1f6bff;
+      --neon-cyan: #00e5ff;
+      --sent-gradient: linear-gradient(135deg, #ff2d9b 0%, #7b3cff 52%, #1f6bff 100%);
       --typing-green: #46a832;
       --chat-bg: #ededed;
       --line: rgba(0, 0, 0, 0.08);
@@ -47,29 +52,70 @@
     .title-bar {
       position: relative;
       z-index: 2;
-      flex: 0 0 55px;
+      flex: 0 0 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 12px;
-      background: #ededed;
-      border-bottom: 1px solid var(--line);
+      padding: 0 14px;
+      overflow: hidden;
+      border-radius: 0 0 18px 18px;
+      background:
+        radial-gradient(circle at 14% 0%, rgba(0, 229, 255, 0.18), transparent 36%),
+        radial-gradient(circle at 90% 100%, rgba(255, 45, 155, 0.2), transparent 42%),
+        linear-gradient(120deg, #080a16 0%, #131128 58%, #1c0b2b 100%);
+      box-shadow:
+        0 8px 22px rgba(8, 8, 20, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .title-bar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image:
+        linear-gradient(rgba(0, 229, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.055) 1px, transparent 1px);
+      background-size: 16px 16px;
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 90%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 90%);
+      pointer-events: none;
+    }
+
+    .title-bar::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 0;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-pink), transparent);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.32);
+      pointer-events: none;
     }
 
     .title {
       position: absolute;
+      z-index: 1;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
       margin: 0;
+      color: #f7f3ff;
       font-size: 17px;
       font-weight: 600;
       line-height: 1;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.6px;
       white-space: nowrap;
+      text-shadow:
+        0 0 9px rgba(0, 229, 255, 0.48),
+        0 0 20px rgba(255, 45, 155, 0.3);
     }
 
     .icon-button {
+      position: relative;
+      z-index: 1;
       width: 32px;
       height: 32px;
       padding: 0;
@@ -77,14 +123,14 @@
       align-items: center;
       justify-content: center;
       border: 0;
-      border-radius: 6px;
+      border-radius: 8px;
       background: transparent;
-      color: #1a1a1a;
+      color: #b9f6ff;
       cursor: pointer;
     }
 
     .icon-button:active {
-      background: rgba(0, 0, 0, 0.06);
+      background: rgba(0, 229, 255, 0.12);
     }
 
     .icon-button svg {
@@ -95,6 +141,7 @@
       stroke-width: 1.9;
       stroke-linecap: round;
       stroke-linejoin: round;
+      filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.38));
     }
 
     /* 聊天区 */
@@ -222,20 +269,22 @@
       filter: drop-shadow(-1px 1px 1px rgba(0, 0, 0, 0.045));
     }
 
-    /* 我：右侧绿气泡 */
+    /* 我：右侧霓虹渐变气泡 */
     .sent .bubble {
-      color: #15220e;
-      background: var(--wechat-green);
+      color: #ffffff;
+      background: var(--sent-gradient);
+      text-shadow: 0 1px 2px rgba(13, 3, 35, 0.3);
       box-shadow:
-        0 3px 10px rgba(85, 150, 45, 0.13),
-        0 1px 2px rgba(40, 80, 20, 0.05);
+        inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+        0 4px 14px rgba(255, 45, 155, 0.24),
+        0 2px 18px rgba(31, 107, 255, 0.2);
     }
 
     .sent .bubble::before {
       right: -6px;
-      background: var(--wechat-green);
+      background: var(--neon-blue);
       clip-path: polygon(0 0, 90% 50%, 0 100%);
-      filter: drop-shadow(1px 1px 1px rgba(70, 120, 40, 0.08));
+      filter: drop-shadow(1px 1px 2px rgba(31, 107, 255, 0.28));
     }
 
     /* 对方正在输入 */
